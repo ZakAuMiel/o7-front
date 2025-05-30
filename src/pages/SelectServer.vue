@@ -1,50 +1,51 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted } from "vue";
 
 interface Guild {
-  id: string
-  name: string
-  icon: string | null
+  id: string;
+  name: string;
+  icon: string | null;
 }
 
-const guilds = ref<Guild[]>([])
-const loading = ref(true)
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
+const guilds = ref<Guild[]>([]);
+const loading = ref(true);
 
 const fetchGuilds = async () => {
   try {
-    const res = await fetch('/api/auth/discord/guilds', {
-      credentials: 'include' // utilise bien les cookies de session
-    })
-    const data = await res.json()
-    guilds.value = data.guilds || []
+    const res = await fetch(`${API_BASE_URL}/api/auth/discord/guilds`, {
+      credentials: "include", // utilise bien les cookies de session
+    });
+    const data = await res.json();
+    guilds.value = data.guilds || [];
   } catch (err) {
-    console.error('❌ Erreur fetch guilds', err)
+    console.error("❌ Erreur fetch guilds", err);
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 
 const handleSelect = async (guild: Guild) => {
   try {
-    const res = await fetch(`/api/auth/verify-role?guildId=${guild.id}`, {
-      credentials: 'include'
-    })
-    const data = await res.json()
+    const res = await fetch(`${API_BASE_URL}/api/auth/verify-role?guildId=${guild.id}`, {
+      credentials: "include",
+    });
+    const data = await res.json();
 
-    if (data.role === 'ami' || data.role === 'streamer') {
-      localStorage.setItem('role', data.role)
-      localStorage.setItem('guildId', guild.id)
-      window.location.href = '/upload'
+    if (data.role === "ami" || data.role === "streamer") {
+      localStorage.setItem("role", data.role);
+      localStorage.setItem("guildId", guild.id);
+      window.location.href = "/upload";
     } else {
-      alert('❌ Tu n’as pas les permissions nécessaires sur ce serveur.')
+      alert("❌ Tu n’as pas les permissions nécessaires sur ce serveur.");
     }
   } catch (err) {
-    alert("Erreur lors de la vérification du rôle.")
-    console.error(err)
+    alert("Erreur lors de la vérification du rôle.");
+    console.error(err);
   }
-}
+};
 
-onMounted(fetchGuilds)
+onMounted(fetchGuilds);
 </script>
 
 <template>
@@ -54,10 +55,14 @@ onMounted(fetchGuilds)
     <div v-if="loading" class="text-accent">Chargement des serveurs...</div>
 
     <div v-else-if="guilds.length === 0" class="text-accent">
-      Aucun serveur trouvé. Le bot doit être présent sur au moins un serveur où tu es membre.
+      Aucun serveur trouvé. Le bot doit être présent sur au moins un serveur où
+      tu es membre.
     </div>
 
-    <div v-else class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 w-full max-w-5xl">
+    <div
+      v-else
+      class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 w-full max-w-5xl"
+    >
       <div
         v-for="guild in guilds"
         :key="guild.id"
@@ -71,7 +76,10 @@ onMounted(fetchGuilds)
             alt="icon"
             class="w-12 h-12 rounded"
           />
-          <div v-else class="w-12 h-12 bg-gray-700 rounded flex items-center justify-center font-bold">
+          <div
+            v-else
+            class="w-12 h-12 bg-gray-700 rounded flex items-center justify-center font-bold"
+          >
             {{ guild.name[0] }}
           </div>
           <div class="font-semibold truncate">{{ guild.name }}</div>

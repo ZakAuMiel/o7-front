@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref, watch } from "vue";
 
+
+
 const file = ref<File | null>(null);
 const previewUrl = ref("");
 const username = ref("");
@@ -52,10 +54,11 @@ const handleSubmit = async () => {
   }
 
   try {
-    const res = await fetch("http://localhost:3000/api/upload", {
+    const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/upload`, {
       method: "POST",
       body: formData
-    });
+  });
+
     const data = await res.json();
     alert(res.ok ? "✅ Mème envoyé au stream" : `❌ Erreur : ${data.message}`);
     if (res.ok) {
