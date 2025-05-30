@@ -17,7 +17,7 @@ export default defineConfig({
           name: 'copy-redirects',
           writeBundle() {
             copyFileSync(
-              resolve(__dirname, 'public/redirects'),
+              resolve(__dirname, 'public/_redirects'),
               resolve(__dirname, 'dist/_redirects')
             )
           }
