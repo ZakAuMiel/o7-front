@@ -1,3 +1,11 @@
+<script setup lang="ts">
+// Page de connexion avec Discord
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
+// URL pour la connexion Discord
+const discordLoginUrl = `${API_BASE_URL}/api/auth/login`;
+</script>
+
 <template>
   <div
     class="h-screen w-full bg-soft text-main flex items-center justify-center"
@@ -28,8 +36,8 @@
             envoyer des contenus.
           </p>
           <a
-            href="`${import.meta.env.VITE_API_BASE_URL}/api/auth/login`"
-            class="block w-full text-center bg-primary text-soft font-semibold py-3 rounded hover:bg-opacity-90 transition"
+            :href="discordLoginUrl"
+            class="block w-full text-center bg-primary ..."
           >
             🔑 Se connecter via Discord
           </a>
