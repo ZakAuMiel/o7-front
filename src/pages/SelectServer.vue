@@ -35,7 +35,7 @@ const handleSelect = async (guild: Guild) => {
     if (data.role === "ami" || data.role === "streamer") {
       localStorage.setItem("role", data.role);
       localStorage.setItem("guildId", guild.id);
-      window.location.href = "/upload";
+      window.location.href = `${API_BASE_URL}/upload`;
     } else {
       alert("❌ Tu n’as pas les permissions nécessaires sur ce serveur.");
     }
