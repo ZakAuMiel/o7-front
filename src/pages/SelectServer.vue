@@ -15,10 +15,17 @@ const loading = ref(true);
 const fetchGuilds = async () => {
   try {
     const res = await fetch(`${API_BASE_URL}/api/auth/discord/guilds`, {
-      credentials: "include", // utilise bien les cookies de session
+      credentials: "include",
     });
+
+    if (res.status === 401) {
+      console.warn("🔒 Utilisateur non authentifié");
+      window.location.href = "/#/login";
+      return;
+    }
+
     const data = await res.json();
-    guilds.value = data.guilds || [];
+    guilds.value = data.guilds || data; // selon ce que renvoie ton backend
   } catch (err) {
     console.error("❌ Erreur fetch guilds", err);
   } finally {
