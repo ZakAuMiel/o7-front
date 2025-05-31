@@ -7,7 +7,8 @@ interface Guild {
   icon: string | null;
 }
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
 const guilds = ref<Guild[]>([]);
 const loading = ref(true);
 
@@ -27,15 +28,18 @@ const fetchGuilds = async () => {
 
 const handleSelect = async (guild: Guild) => {
   try {
-    const res = await fetch(`${API_BASE_URL}/api/auth/verify-role?guildId=${guild.id}`, {
-      credentials: "include",
-    });
+    const res = await fetch(
+      `${API_BASE_URL}/api/auth/verify-role?guildId=${guild.id}`,
+      {
+        credentials: "include",
+      }
+    );
     const data = await res.json();
 
     if (data.role === "ami" || data.role === "streamer") {
       localStorage.setItem("role", data.role);
       localStorage.setItem("guildId", guild.id);
-      window.location.href = `${API_BASE_URL}/upload`;
+      window.location.href = "/#/upload";
     } else {
       alert("❌ Tu n’as pas les permissions nécessaires sur ce serveur.");
     }
@@ -74,14 +78,15 @@ onMounted(fetchGuilds);
             v-if="guild.icon"
             :src="`https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.png`"
             alt="icon"
-            class="w-12 h-12 rounded"
+            class="w-12 h-12 rounded-full object-cover"
           />
           <div
             v-else
-            class="w-12 h-12 bg-gray-700 rounded flex items-center justify-center font-bold"
+            class="w-12 h-12 bg-gray-700 text-white uppercase text-lg font-bold rounded-full flex items-center justify-center"
           >
             {{ guild.name[0] }}
           </div>
+
           <div class="font-semibold truncate">{{ guild.name }}</div>
         </div>
       </div>
