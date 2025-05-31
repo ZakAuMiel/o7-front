@@ -1,21 +1,24 @@
 <script setup lang="ts">
 import { ref, watch, onMounted } from "vue";
 
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
+
 const file = ref<File | null>(null);
 const previewUrl = ref("");
 const username = ref("");
 const avatar = ref("");
 const size = ref(50);
-
 const fullVideo = ref(true);
 const duration = ref(5);
 const caption = ref("");
 const externalUrl = ref("");
 
-const isVideoLink = (url: string) => {
-  return /youtube\.com|youtu\.be|tiktok\.com|instagram\.com/.test(url);
-};
+// Vérifie si un lien est une vidéo externe
+const isVideoLink = (url: string) =>
+  /youtube\.com|youtu\.be|tiktok\.com|instagram\.com/.test(url);
 
+// 🔁 Watch externalUrl pour remplacer file si un lien est détecté
 watch(externalUrl, (val) => {
   const trimmed = val.trim();
   if (trimmed && trimmed.length > 5) {
@@ -26,6 +29,30 @@ watch(externalUrl, (val) => {
   }
 });
 
+const checkSession = async (): Promise<boolean> => {
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/auth/me`, {
+      credentials: "include",
+    });
+
+    if (res.status === 401) {
+      console.warn("🔒 Pas connecté — redirection vers login");
+      window.location.href = "/#/login";
+      return false;
+    }
+
+    const data = await res.json();
+    if (!username.value) username.value = data.username;
+    if (!avatar.value && data.avatarUrl) avatar.value = data.avatarUrl;
+    return true;
+  } catch (e) {
+    console.warn("❌ Erreur session /me :", e);
+    window.location.href = "/#/login";
+    return false;
+  }
+};
+
+// 🖼️ Gère l'import local de fichier
 const handleFileChange = (event: Event) => {
   const input = event.target as HTMLInputElement;
   if (input.files?.[0]) {
@@ -35,6 +62,7 @@ const handleFileChange = (event: Event) => {
   }
 };
 
+// 📤 Envoi du formulaire
 const handleSubmit = async () => {
   if (!file.value && !externalUrl.value.trim()) {
     return alert("❌ Aucun média fourni.");
@@ -53,7 +81,7 @@ const handleSubmit = async () => {
   }
 
   try {
-    const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/upload`, {
+    const res = await fetch(`${API_BASE_URL}/api/upload`, {
       method: "POST",
       body: formData,
     });
@@ -75,20 +103,7 @@ const handleSubmit = async () => {
 };
 
 onMounted(async () => {
-  try {
-    const res = await fetch(
-      `${import.meta.env.VITE_API_BASE_URL}/api/auth/me`,
-      {
-        credentials: "include",
-      }
-    );
-    const data = await res.json();
-
-    if (!username.value) username.value = data.username;
-    if (!avatar.value && data.avatarUrl) avatar.value = data.avatarUrl;
-  } catch (e) {
-    console.warn("❌ Erreur fetch /me :", e);
-  }
+  await checkSession();
 });
 </script>
 

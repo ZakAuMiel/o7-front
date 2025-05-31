@@ -9,9 +9,31 @@ interface Guild {
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
-const guilds = ref<Guild[]>([]);
 
+const guilds = ref<Guild[]>([]);
 const loading = ref(true);
+
+const checkSession = async (): Promise<boolean> => {
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/auth/me`, {
+      credentials: "include",
+    });
+
+    if (res.status === 401) {
+      console.warn("🔒 Pas connecté — redirection vers login");
+      window.location.href = "/#/login";
+      return false;
+    }
+
+    const data = await res.json();
+    console.log("✅ Utilisateur connecté :", data.username);
+    return true;
+  } catch (err) {
+    console.error("❌ Erreur checkSession:", err);
+    window.location.href = "/#/login";
+    return false;
+  }
+};
 
 const fetchGuilds = async () => {
   try {
@@ -26,7 +48,7 @@ const fetchGuilds = async () => {
     }
 
     const data = await res.json();
-    guilds.value = data.guilds || data; // selon ce que renvoie ton backend
+    guilds.value = data.guilds || data;
   } catch (err) {
     console.error("❌ Erreur fetch guilds", err);
   } finally {
@@ -57,7 +79,12 @@ const handleSelect = async (guild: Guild) => {
   }
 };
 
-onMounted(fetchGuilds);
+onMounted(async () => {
+  const sessionValid = await checkSession();
+  if (sessionValid) {
+    fetchGuilds();
+  }
+});
 </script>
 
 <template>
