@@ -20,16 +20,14 @@ const checkSession = async (): Promise<boolean> => {
     });
 
     if (res.status === 401) {
-      console.warn("🔒 Pas connecté — redirection vers login");
+      console.warn("🔒 Non connecté → redirection login");
       window.location.href = "/#/login";
       return false;
     }
 
-    const data = await res.json();
-    console.log("✅ Utilisateur connecté :", data.username);
     return true;
   } catch (err) {
-    console.error("❌ Erreur checkSession:", err);
+    console.error("❌ Erreur de session :", err);
     window.location.href = "/#/login";
     return false;
   }
@@ -40,12 +38,6 @@ const fetchGuilds = async () => {
     const res = await fetch(`${API_BASE_URL}/api/auth/discord/guilds`, {
       credentials: "include",
     });
-
-    if (res.status === 401) {
-      console.warn("🔒 Utilisateur non authentifié");
-      window.location.href = "/#/login";
-      return;
-    }
 
     const data = await res.json();
     guilds.value = data.guilds || data;
@@ -80,10 +72,8 @@ const handleSelect = async (guild: Guild) => {
 };
 
 onMounted(async () => {
-  const sessionValid = await checkSession();
-  if (sessionValid) {
-    fetchGuilds();
-  }
+  const sessionOk = await checkSession();
+  if (sessionOk) fetchGuilds();
 });
 </script>
 
