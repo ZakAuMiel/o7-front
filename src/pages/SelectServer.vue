@@ -58,6 +58,8 @@ const handleSelect = async (guild: Guild) => {
         credentials: "include",
       }
     );
+
+    console.log("📡 Statut HTTP /verify-role :", res.status);
     const data = await res.json();
 
     if (data.role === "ami" || data.role === "streamer") {
