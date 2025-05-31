@@ -1,5 +1,5 @@
 // src/router/index.ts
-import { createRouter, createWebHistory } from "vue-router";
+import { createRouter, createWebHashHistory } from "vue-router";
 import Login from "../pages/Login.vue";
 import SelectServer from "../pages/SelectServer.vue";
 import Upload from "../pages/Upload.vue";
@@ -12,7 +12,7 @@ const routes = [
 ];
 
 const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHashHistory(),
   routes,
 });
 
