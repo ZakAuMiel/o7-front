@@ -12,26 +12,28 @@ const API_BASE_URL =
 
 const guilds = ref<Guild[]>([]);
 const loading = ref(true);
+const sessionChecked = ref(false);
 
 const checkSession = async (): Promise<boolean> => {
   try {
     const res = await fetch(`${API_BASE_URL}/api/auth/me`, {
-      credentials: "include",
+      credentials: "include"
     });
 
-    if (res.status === 401) {
-      console.warn("🔒 Non connecté → redirection login");
-      window.location.href = "/#/login";
+    if (!res.ok) {
+      console.warn("Pas de session active");
       return false;
     }
 
+    const data = await res.json();
+    console.log("✅ Session confirmée pour :", data.username);
     return true;
   } catch (err) {
-    console.error("❌ Erreur de session :", err);
-    window.location.href = "/#/login";
+    console.error("❌ Erreur session :", err);
     return false;
   }
 };
+
 
 const fetchGuilds = async () => {
   try {
@@ -73,11 +75,17 @@ const handleSelect = async (guild: Guild) => {
 
 onMounted(async () => {
   const sessionOk = await checkSession();
-  if (sessionOk) fetchGuilds();
+  sessionChecked.value = true;
+
+  if (sessionOk) {
+    fetchGuilds();
+  }
 });
+
 </script>
 
 <template>
+  <div v-if="!sessionChecked" class="text-accent">⏳ Vérification de session...</div>
   <div class="min-h-screen bg-soft text-main p-6 flex flex-col items-center">
     <h1 class="text-3xl font-bold text-accent mb-4">🧭 Choisis un serveur</h1>
 
