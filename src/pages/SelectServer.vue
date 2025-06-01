@@ -59,6 +59,7 @@ const handleSelect = async (guild: Guild) => {
     );
 
     console.log("📡 Statut HTTP /verify-role :", res.status);
+    
     const data = await res.json();
 
     if (res.ok && data.authorized) {
@@ -72,6 +73,7 @@ const handleSelect = async (guild: Guild) => {
       }
     } else {
       alert("❌ Tu n’as pas les permissions nécessaires sur ce serveur.");
+      console.log("📂 Guilds visibles :", data);
     }
   } catch (err) {
     alert("Erreur lors de la vérification du rôle.");
