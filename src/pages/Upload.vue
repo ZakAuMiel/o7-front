@@ -84,6 +84,7 @@ const handleSubmit = async () => {
     const res = await fetch(`${API_BASE_URL}/api/upload`, {
       method: "POST",
       body: formData,
+      credentials: "include",
     });
     const data = await res.json();
     alert(
