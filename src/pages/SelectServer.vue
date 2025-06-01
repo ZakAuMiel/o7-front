@@ -59,18 +59,13 @@ const handleSelect = async (guild: Guild) => {
     );
 
     console.log("📡 Statut HTTP /verify-role :", res.status);
-    
+
     const data = await res.json();
 
     if (res.ok && data.authorized) {
       localStorage.setItem("role", data.role);
       localStorage.setItem("guildId", guild.id);
-
-      if (data.accessLevel === "admin") {
-        router.push("/upload");
-      } else {
-        router.push("/upload-lite");
-      }
+      router.push("/list-friends");
     } else {
       alert("❌ Tu n’as pas les permissions nécessaires sur ce serveur.");
       console.log("📂 Guilds visibles :", data);
@@ -93,7 +88,9 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div v-if="!sessionChecked" class="text-accent">⏳ Vérification de session...</div>
+  <div v-if="!sessionChecked" class="text-accent">
+    ⏳ Vérification de session...
+  </div>
 
   <div class="min-h-screen bg-soft text-main p-6 flex flex-col items-center">
     <h1 class="text-3xl font-bold text-accent mb-4">🧭 Choisis un serveur</h1>
@@ -101,7 +98,8 @@ onMounted(async () => {
     <div v-if="loading" class="text-accent">Chargement des serveurs...</div>
 
     <div v-else-if="guilds.length === 0" class="text-accent">
-      Aucun serveur trouvé. Le bot doit être présent sur au moins un serveur où tu es membre.
+      Aucun serveur trouvé. Le bot doit être présent sur au moins un serveur où
+      tu es membre.
     </div>
 
     <div

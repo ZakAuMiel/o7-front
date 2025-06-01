@@ -9,7 +9,7 @@ const routes = [
   { path: "/login", component: Login },
   { path: "/select-server", component: SelectServer },
   { path: "/upload", component: Upload },
-  { path: "/list-friend", component : ListFriendPage }
+  { path: "/list-friends", component : ListFriendPage }
 
 ];
 
