@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
+import { useRouter } from "vue-router";
 
 interface Guild {
   id: string;
@@ -7,23 +8,20 @@ interface Guild {
   icon: string | null;
 }
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
-
+const router = useRouter();
+const API_URL = import.meta.env.VITE_API_BASE_URL;
 const guilds = ref<Guild[]>([]);
 const loading = ref(true);
 const sessionChecked = ref(false);
 
+// 🔐 Vérifie si la session est active
 const checkSession = async (): Promise<boolean> => {
   try {
-    const res = await fetch(`${API_BASE_URL}/api/auth/me`, {
-      credentials: "include"
+    const res = await fetch(`${API_URL}/api/auth/me`, {
+      credentials: "include",
     });
 
-    if (!res.ok) {
-      console.warn("Pas de session active");
-      return false;
-    }
+    if (!res.ok) return false;
 
     const data = await res.json();
     console.log("✅ Session confirmée pour :", data.username);
@@ -34,10 +32,10 @@ const checkSession = async (): Promise<boolean> => {
   }
 };
 
-
+// 📡 Récupère la liste des serveurs
 const fetchGuilds = async () => {
   try {
-    const res = await fetch(`${API_BASE_URL}/api/auth/discord/guilds`, {
+    const res = await fetch(`${API_URL}/api/auth/discord/guilds`, {
       credentials: "include",
     });
 
@@ -50,10 +48,11 @@ const fetchGuilds = async () => {
   }
 };
 
+// 👉 Quand l'utilisateur clique sur un serveur
 const handleSelect = async (guild: Guild) => {
   try {
     const res = await fetch(
-      `${API_BASE_URL}/api/auth/verify-role?guildId=${guild.id}`,
+      `${API_URL}/api/auth/verify-role?guildId=${guild.id}`,
       {
         credentials: "include",
       }
@@ -62,10 +61,15 @@ const handleSelect = async (guild: Guild) => {
     console.log("📡 Statut HTTP /verify-role :", res.status);
     const data = await res.json();
 
-    if (data.role === "ami" || data.role === "streamer") {
+    if (res.ok && data.authorized) {
       localStorage.setItem("role", data.role);
       localStorage.setItem("guildId", guild.id);
-      window.location.href = "/#/upload";
+
+      if (data.accessLevel === "admin") {
+        router.push("/upload");
+      } else {
+        router.push("/upload-lite");
+      }
     } else {
       alert("❌ Tu n’as pas les permissions nécessaires sur ce serveur.");
     }
@@ -75,6 +79,7 @@ const handleSelect = async (guild: Guild) => {
   }
 };
 
+// ▶️ Initialisation
 onMounted(async () => {
   const sessionOk = await checkSession();
   sessionChecked.value = true;
@@ -83,19 +88,18 @@ onMounted(async () => {
     fetchGuilds();
   }
 });
-
 </script>
 
 <template>
   <div v-if="!sessionChecked" class="text-accent">⏳ Vérification de session...</div>
+
   <div class="min-h-screen bg-soft text-main p-6 flex flex-col items-center">
     <h1 class="text-3xl font-bold text-accent mb-4">🧭 Choisis un serveur</h1>
 
     <div v-if="loading" class="text-accent">Chargement des serveurs...</div>
 
     <div v-else-if="guilds.length === 0" class="text-accent">
-      Aucun serveur trouvé. Le bot doit être présent sur au moins un serveur où
-      tu es membre.
+      Aucun serveur trouvé. Le bot doit être présent sur au moins un serveur où tu es membre.
     </div>
 
     <div
@@ -121,7 +125,6 @@ onMounted(async () => {
           >
             {{ guild.name[0] }}
           </div>
-
           <div class="font-semibold truncate">{{ guild.name }}</div>
         </div>
       </div>
