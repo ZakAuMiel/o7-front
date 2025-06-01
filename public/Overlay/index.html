@@ -79,7 +79,7 @@
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script>
-      const socket = io("https://o7-back-production.up.railway.app", {
+      const socket = io(location.origin, {
         transports: ["websocket"],
       });
 
@@ -114,27 +114,24 @@
             ? Number(data.duration)
             : data.type === "image"
             ? 5000
-            : null; // fallback 5s image
+            : null;
 
         usernameEl.textContent = data.username || "Anonyme";
         avatarEl.src = data.avatarUrl || "";
         messageEl.textContent = data.message || "";
 
-        const mediaUrl = location.hostname.includes("localhost")
-          ? `http://localhost:3000${data.url}`
-          : `https://o7-back-production.up.railway.app${data.url}`;
+        const mediaUrl = `${location.origin}${data.url}`;
         const media = document.createElement(
           data.type === "video" ? "video" : "img"
         );
 
+        media.src = mediaUrl;
+
         if (data.type === "video") {
-          media.src = mediaUrl;
           media.autoplay = true;
           media.playsInline = true;
           media.controls = false;
-          media.muted = false;
-        } else {
-          media.src = mediaUrl;
+          media.muted = true; // 🔥 obligatoire pour autoplay sans user interaction
         }
 
         wrapper.appendChild(media);
