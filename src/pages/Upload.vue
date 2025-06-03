@@ -10,7 +10,7 @@ const username = ref("");
 const avatar = ref("");
 const size = ref(50);
 const duration = ref(5);
-const useFullVideo = ref(true);
+const useFullVideo = ref(false);
 const caption = ref("");
 
 const getMediaType = (filename: string): string => {
@@ -83,7 +83,7 @@ const handleSubmit = async () => {
 
 const sendEmergencyCut = async () => {
   try {
-    await fetch(`${API_BASE_URL}/api/overlay/stop`, {
+    await fetch(`${API_BASE_URL}/api/shutdown`, {
       method: "POST",
       credentials: "include",
     });
@@ -119,7 +119,8 @@ onMounted(async () => {
               username
             }}</span>
           </div>
-
+          <label for="previewUrl" class="text-sm text-accent">Sélectionne un fichier, (une image, une vidéo, un audio, un gif et me fais pas ban)</label
+            >
           <input
             type="file"
             @change="handleFileChange"
@@ -148,7 +149,7 @@ onMounted(async () => {
               class="accent-accent"
             />
             <label for="useFullVideo" class="text-sm text-accent"
-              >Afficher toute la vidéo (non audio)</label
+              >Afficher toute la vidéo (évite ça me coute bcp d'argent wallah)</label
             >
           </div>
 
@@ -173,7 +174,7 @@ onMounted(async () => {
             <input
               id="caption"
               v-model="caption"
-              placeholder="Ex: Je passe à la télé !"
+              placeholder="Ex: Soit drôle frère sinon c'est pas la peine !"
               class="w-full p-2 rounded bg-soft text-main"
             />
           </div>
@@ -190,7 +191,7 @@ onMounted(async () => {
           @click="sendEmergencyCut"
           class="mt-6 p-3 bg-red-600 text-white rounded font-bold shadow-md"
         >
-          🚨 Couper le stream
+          🚨 Cut le média BORDEL !
         </button>
       </div>
 
@@ -236,7 +237,7 @@ onMounted(async () => {
             </p>
           </template>
           <template v-else>
-            <p class="italic text-sm text-accent">Aucun mème sélectionné</p>
+            <p class="italic text-sm text-accent">Aucun meme sélectionné</p>
           </template>
         </div>
       </div>
