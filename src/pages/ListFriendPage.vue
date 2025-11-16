@@ -67,7 +67,7 @@
                 </div>
               </div>
               <button
-                class="text-sm font-semibold text-white bg-accent px-3 py-1.5 rounded-xl hover:bg-accent/90"
+                class="text-sm font-semibold text-white bg-blue-700 px-3 py-1.5 rounded-xl hover:bg-blue-700/90"
                 @click="goToUpload"
               >
                 Upload
