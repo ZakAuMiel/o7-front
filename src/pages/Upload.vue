@@ -197,7 +197,7 @@ onBeforeUnmount(() => {
   stopDrag();
 });
 
-// ---------- SESSION / FORM LOGIC (comme avant, adapté) ----------
+// ---------- SESSION / FORM LOGIC ----------
 
 const checkSession = async (): Promise<boolean> => {
   try {
@@ -231,6 +231,31 @@ const handleFileChange = (event: Event) => {
   }
 };
 
+// 🔥 TikTok → MP4 via TikWM (côté front)
+const resolveTikTokToMp4 = async (url: string): Promise<string | null> => {
+  try {
+    const apiUrl = `https://api.tikwm.com/video/?url=${encodeURIComponent(
+      url
+    )}`;
+    const res = await fetch(apiUrl);
+    if (!res.ok) {
+      console.error("TikTok API HTTP error", res.status);
+      return null;
+    }
+    const data = await res.json();
+    const mp4 = data?.data?.play;
+    if (typeof mp4 === "string" && mp4.length > 0) {
+      console.log("🎵 TikTok MP4 direct (front) :", mp4);
+      return mp4;
+    }
+    console.warn("TikTok API: pas de .data.play", data);
+    return null;
+  } catch (err) {
+    console.error("TikTok API fetch error:", err);
+    return null;
+  }
+};
+
 const handleSubmit = async () => {
   const trimmedUrl = externalUrl.value.trim();
   const useExternal = trimmedUrl.length > 0;
@@ -246,27 +271,48 @@ const handleSubmit = async () => {
     return;
   }
 
-  const formData = new FormData();
-  formData.append("username", username.value);
-  formData.append("avatarUrl", avatar.value);
-  formData.append("displaySize", size.value.toString());
-  formData.append("message", caption.value);
-  formData.append("layout", JSON.stringify(layout.value)); // 🔥 layout envoyé au back
-
-  if (useExternal) {
-    formData.append("externalUrl", trimmedUrl);
-  } else if (file.value) {
-    formData.append("media", file.value);
-    const type = getMediaType(file.value.name);
-    formData.append("type", type);
-  }
-
-  if (!useFullMedia.value) {
-    formData.append("duration", (duration.value * 1000).toString());
-  }
-
   isSubmitting.value = true;
+
   try {
+    const formData = new FormData();
+    formData.append("username", username.value);
+    formData.append("avatarUrl", avatar.value);
+    formData.append("displaySize", size.value.toString());
+    formData.append("message", caption.value);
+    formData.append("layout", JSON.stringify(layout.value)); // layout envoyé au back
+
+    // 🔹 Gestion du lien externe (prioritaire)
+    if (useExternal) {
+      let finalExternalUrl = trimmedUrl;
+
+      // Si c'est un lien TikTok → resolve MP4 côté front
+      if (embedType.value === "tiktok") {
+        const mp4 = await resolveTikTokToMp4(trimmedUrl);
+        if (!mp4) {
+          alert(
+            "Impossible de récupérer la vidéo TikTok (API externe). Réessaie ou envoie un autre lien."
+          );
+          isSubmitting.value = false;
+          return;
+        }
+        finalExternalUrl = mp4;
+      }
+
+      formData.append("externalUrl", finalExternalUrl);
+    }
+
+    // 🔹 Fichier local si pas de lien externe
+    else if (file.value) {
+      formData.append("media", file.value);
+      const type = getMediaType(file.value.name);
+      formData.append("type", type);
+    }
+
+    // Durée (en ms) si on ne veut pas le média complet
+    if (!useFullMedia.value) {
+      formData.append("duration", (duration.value * 1000).toString());
+    }
+
     const res = await fetch(`${API_BASE_URL}/api/upload`, {
       method: "POST",
       body: formData,
