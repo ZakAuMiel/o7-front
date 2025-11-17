@@ -9,9 +9,10 @@ const previewUrl = ref("");
 const username = ref("");
 const avatar = ref("");
 const size = ref(50);
-const duration = ref(5);
-const useFullVideo = ref(false);
+const duration = ref(5); // en secondes
+const useFullMedia = ref(false);
 const caption = ref("");
+const isSubmitting = ref(false);
 
 const getMediaType = (filename: string): string => {
   const ext = filename.split(".").pop()?.toLowerCase();
@@ -45,23 +46,42 @@ const handleFileChange = (event: Event) => {
   if (input.files?.[0]) {
     file.value = input.files[0];
     previewUrl.value = URL.createObjectURL(file.value);
+    // reset options
+    useFullMedia.value = false;
+    duration.value = 5;
   }
 };
 
 const handleSubmit = async () => {
-  if (!file.value) return alert("Aucun fichier sélectionné");
+  if (!file.value) {
+    alert("Aucun fichier sélectionné");
+    return;
+  }
+  if (isSubmitting.value) return;
+
+  // limite de taille (ex: 50 Mo)
+  if (file.value.size > 50 * 1024 * 1024) {
+    alert("❌ Fichier trop lourd (max 50 Mo)");
+    return;
+  }
+
   const formData = new FormData();
   formData.append("media", file.value);
   formData.append("username", username.value);
   formData.append("avatarUrl", avatar.value);
   formData.append("displaySize", size.value.toString());
   formData.append("message", caption.value);
+
   const type = getMediaType(file.value.name);
   formData.append("type", type);
-  if (!useFullVideo.value && type !== "audio") {
+
+  // Durée pour TOUT (audio + vidéo + éventuellement image)
+  // uniquement si on ne veut pas le média complet
+  if (!useFullMedia.value) {
     formData.append("duration", (duration.value * 1000).toString());
   }
 
+  isSubmitting.value = true;
   try {
     const res = await fetch(`${API_BASE_URL}/api/upload`, {
       method: "POST",
@@ -70,14 +90,19 @@ const handleSubmit = async () => {
     });
     const data = await res.json();
     alert(res.ok ? "✅ Mème envoyé !" : `❌ Erreur : ${data.message}`);
+
     if (res.ok) {
       file.value = null;
       previewUrl.value = "";
       caption.value = "";
+      useFullMedia.value = false;
+      duration.value = 5;
     }
   } catch (err) {
     console.error(err);
     alert("❌ Erreur réseau");
+  } finally {
+    isSubmitting.value = false;
   }
 };
 
@@ -119,9 +144,13 @@ onMounted(async () => {
               username
             }}</span>
           </div>
-          <label for="previewUrl" class="text-sm text-accent">Sélectionne un fichier, (une image, une vidéo, un audio, un gif et me fais pas ban)</label
-            >
+
+          <label for="file" class="text-sm text-accent">
+            Sélectionne un fichier (image, vidéo, audio, gif… et me fais pas
+            ban)
+          </label>
           <input
+            id="file"
             type="file"
             @change="handleFileChange"
             class="w-full p-2 rounded bg-soft text-main"
@@ -141,22 +170,24 @@ onMounted(async () => {
             <p class="text-xs mt-1 text-accent">{{ size }}%</p>
           </div>
 
-          <div class="flex items-center gap-2">
+          <!-- Full média -->
+          <div class="flex items-center gap-2" v-if="file">
             <input
               type="checkbox"
-              id="useFullVideo"
-              v-model="useFullVideo"
+              id="useFullMedia"
+              v-model="useFullMedia"
               class="accent-accent"
             />
-            <label for="useFullVideo" class="text-sm text-accent"
-              >Afficher toute la vidéo (évite ça me coute bcp d'argent wallah)</label
-            >
+            <label for="useFullMedia" class="text-sm text-accent">
+              Afficher tout le média (évite ça me coûte bcp d'argent wallah)
+            </label>
           </div>
 
-          <div v-if="!useFullVideo">
-            <label for="duration" class="block text-sm font-medium text-accent"
-              >Durée max (s)</label
-            >
+          <!-- Durée personnalisée (pour tout média, sauf si full) -->
+          <div v-if="file && !useFullMedia">
+            <label for="duration" class="block text-sm font-medium text-accent">
+              Durée max (s)
+            </label>
             <input
               type="range"
               min="1"
@@ -181,9 +212,10 @@ onMounted(async () => {
 
           <button
             type="submit"
-            class="w-full p-3 btn-primary font-bold rounded mt-4"
+            class="w-full p-3 btn-primary font-bold rounded mt-4 disabled:opacity-60 disabled:cursor-not-allowed"
+            :disabled="isSubmitting"
           >
-            🚀 Envoyer
+            {{ isSubmitting ? "⏳ Envoi..." : "🚀 Envoyer" }}
           </button>
         </form>
 
