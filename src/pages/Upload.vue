@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
+import { ref, onMounted, onBeforeUnmount, computed } from "vue";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
@@ -10,18 +10,49 @@ const previewUrl = ref("");
 const username = ref("");
 const avatar = ref("");
 
-// taille et durée
-const size = ref(50); // %
-const duration = ref(10); // secondes
+const size = ref(50);
+const duration = ref(10);
 const useFullMedia = ref(false);
-
-// légende + lien externe
 const caption = ref("");
 const externalUrl = ref("");
 
-// état d'envoi
 const isSubmitting = ref(false);
 
+// ---------- TYPES LAYOUT ----------
+type TargetKey = "media" | "userInfo" | "message";
+
+interface Rect {
+  x: number; // en %
+  y: number; // en %
+  width: number; // en %
+  height: number; // en %
+}
+
+interface Layout {
+  media: Rect;
+  userInfo: Rect;
+  message: Rect;
+}
+
+// Layout par défaut (position approx sur un 16/9)
+const layout = ref<Layout>({
+  media: { x: 30, y: 35, width: 40, height: 35 },
+  userInfo: { x: 40, y: 10, width: 20, height: 10 },
+  message: { x: 35, y: 75, width: 30, height: 10 },
+});
+
+const hasFile = computed(() => !!file.value);
+const hasExternal = computed(() => externalUrl.value.trim().length > 0);
+
+const effectiveSourceLabel = computed(() => {
+  if (hasExternal.value && hasFile.value)
+    return "Lien externe (prioritaire sur le fichier)";
+  if (hasExternal.value) return "Lien externe";
+  if (hasFile.value) return "Fichier local";
+  return "Aucun média sélectionné";
+});
+
+// ---------- TYPE DE MEDIA (fichier) ----------
 const getMediaType = (filename: string): string => {
   const ext = filename.split(".").pop()?.toLowerCase();
   if (!ext) return "image";
@@ -30,26 +61,18 @@ const getMediaType = (filename: string): string => {
   return "image";
 };
 
-const hasFile = computed(() => !!file.value);
-const hasExternal = computed(() => externalUrl.value.trim().length > 0);
-
-// pour l'UX : source réellement utilisée
-const effectiveSourceLabel = computed(() => {
-  if (hasExternal.value && hasFile.value) return "Lien externe (prioritaire sur le fichier)";
-  if (hasExternal.value) return "Lien externe";
-  if (hasFile.value) return "Fichier local";
-  return "Aucun média sélectionné";
-});
-
-// Détection du type d'embed pour la preview
-const embedType = computed<"youtube" | "tiktok" | "twitch" | "other" | null>(() => {
-  const url = externalUrl.value.trim().toLowerCase();
-  if (!url) return null;
-  if (url.includes("youtube.com") || url.includes("youtu.be")) return "youtube";
-  if (url.includes("tiktok.com")) return "tiktok";
-  if (url.includes("twitch.tv")) return "twitch";
-  return "other";
-});
+// ---------- TYPE D’EMBED (lien externe) ----------
+const embedType = computed<"youtube" | "tiktok" | "twitch" | "other" | null>(
+  () => {
+    const url = externalUrl.value.trim().toLowerCase();
+    if (!url) return null;
+    if (url.includes("youtube.com") || url.includes("youtu.be"))
+      return "youtube";
+    if (url.includes("tiktok.com")) return "tiktok";
+    if (url.includes("twitch.tv")) return "twitch";
+    return "other";
+  }
+);
 
 const embedPreviewUrl = computed(() => {
   const url = externalUrl.value.trim();
@@ -58,12 +81,10 @@ const embedPreviewUrl = computed(() => {
   const type = embedType.value;
 
   if (type === "youtube") {
-    const match = url.match(
-      /(?:youtube\.com\/.*v=|youtu\.be\/)([^&#?/]+)/i
-    );
+    const match = url.match(/(?:youtube\.com\/.*v=|youtu\.be\/)([^&#?/]+)/i);
     const videoId = match ? match[1] : null;
     if (!videoId) return url;
-    return `https://www.youtube.com/embed/${videoId}?autoplay=0&mute=0`;
+    return `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1`;
   }
 
   if (type === "tiktok") {
@@ -80,21 +101,103 @@ const embedPreviewUrl = computed(() => {
     const vodMatch = lower.match(/twitch\.tv\/videos\/(\d+)/);
     if (vodMatch) {
       const videoId = vodMatch[1];
-      return `https://player.twitch.tv/?video=${videoId}&parent=${host}&autoplay=false`;
+      return `https://player.twitch.tv/?video=${videoId}&parent=${host}&autoplay=true&muted=true`;
     }
 
     const channelMatch = lower.match(/twitch\.tv\/([a-z0-9_]+)(?:\/)?$/);
     if (channelMatch) {
       const channel = channelMatch[1];
-      return `https://player.twitch.tv/?channel=${channel}&parent=${host}&autoplay=false`;
+      return `https://player.twitch.tv/?channel=${channel}&parent=${host}&autoplay=true&muted=true`;
     }
 
     return url;
   }
 
-  // autre lien → on renvoie tel quel, l'embed pourra échouer mais au moins on tente
   return url;
 });
+
+// ---------- DRAG & RESIZE LOGIC ----------
+const stageRef = ref<HTMLElement | null>(null);
+
+interface ActiveDrag {
+  target: TargetKey;
+  mode: "move" | "resize";
+  startX: number;
+  startY: number;
+  startRect: Rect;
+}
+
+const activeDrag = ref<ActiveDrag | null>(null);
+let stageRect: DOMRect | null = null;
+
+const startDrag = (event: PointerEvent, target: TargetKey) => {
+  if (!stageRef.value) return;
+  stageRect = stageRef.value.getBoundingClientRect();
+  activeDrag.value = {
+    target,
+    mode: "move",
+    startX: event.clientX,
+    startY: event.clientY,
+    startRect: { ...layout.value[target] },
+  };
+  window.addEventListener("pointermove", onPointerMove);
+  window.addEventListener("pointerup", stopDrag);
+};
+
+const startResize = (event: PointerEvent, target: TargetKey) => {
+  event.stopPropagation();
+  if (!stageRef.value) return;
+  stageRect = stageRef.value.getBoundingClientRect();
+  activeDrag.value = {
+    target,
+    mode: "resize",
+    startX: event.clientX,
+    startY: event.clientY,
+    startRect: { ...layout.value[target] },
+  };
+  window.addEventListener("pointermove", onPointerMove);
+  window.addEventListener("pointerup", stopDrag);
+};
+
+const onPointerMove = (event: PointerEvent) => {
+  const drag = activeDrag.value;
+  if (!drag || !stageRect) return;
+
+  const dxPercent = ((event.clientX - drag.startX) / stageRect.width) * 100;
+  const dyPercent = ((event.clientY - drag.startY) / stageRect.height) * 100;
+
+  const rect = { ...drag.startRect };
+  const target = drag.target;
+  const minSize = 5;
+
+  if (drag.mode === "move") {
+    let newX = rect.x + dxPercent;
+    let newY = rect.y + dyPercent;
+    newX = Math.max(0, Math.min(100 - rect.width, newX));
+    newY = Math.max(0, Math.min(100 - rect.height, newY));
+    layout.value[target].x = newX;
+    layout.value[target].y = newY;
+  } else {
+    let newW = rect.width + dxPercent;
+    let newH = rect.height + dyPercent;
+    newW = Math.max(minSize, Math.min(100 - rect.x, newW));
+    newH = Math.max(minSize, Math.min(100 - rect.y, newH));
+    layout.value[target].width = newW;
+    layout.value[target].height = newH;
+  }
+};
+
+const stopDrag = () => {
+  activeDrag.value = null;
+  window.removeEventListener("pointermove", onPointerMove);
+  window.removeEventListener("pointerup", stopDrag);
+};
+
+onBeforeUnmount(() => {
+  stopDrag();
+});
+
+// ---------- SESSION / FORM LOGIC (comme avant, adapté) ----------
 
 const checkSession = async (): Promise<boolean> => {
   try {
@@ -124,10 +227,7 @@ const handleFileChange = (event: Event) => {
   if (input.files?.[0]) {
     file.value = input.files[0];
     previewUrl.value = URL.createObjectURL(file.value);
-    // reset options
-    if (!useFullMedia.value) {
-      duration.value = 10;
-    }
+    if (!useFullMedia.value) duration.value = 10;
   }
 };
 
@@ -141,24 +241,22 @@ const handleSubmit = async () => {
   }
   if (isSubmitting.value) return;
 
-  // limite de taille si fichier
   if (file.value && file.value.size > 50 * 1024 * 1024) {
     alert("❌ Fichier trop lourd (max 50 Mo)");
     return;
   }
 
   const formData = new FormData();
-
   formData.append("username", username.value);
   formData.append("avatarUrl", avatar.value);
   formData.append("displaySize", size.value.toString());
   formData.append("message", caption.value);
+  formData.append("layout", JSON.stringify(layout.value)); // 🔥 layout envoyé au back
 
   if (useExternal) {
     formData.append("externalUrl", trimmedUrl);
   } else if (file.value) {
     formData.append("media", file.value);
-    // optionnel, le back recalcule le type de toute façon
     const type = getMediaType(file.value.name);
     formData.append("type", type);
   }
@@ -249,9 +347,7 @@ onMounted(async () => {
                 <template v-if="file">
                   {{ file.name }}
                 </template>
-                <template v-else>
-                  Aucun fichier sélectionné
-                </template>
+                <template v-else> Aucun fichier sélectionné </template>
               </span>
             </div>
             <input
@@ -279,7 +375,8 @@ onMounted(async () => {
 
           <!-- Info source -->
           <p class="text-xs text-accent/80">
-            Source utilisée : <span class="font-semibold">{{ effectiveSourceLabel }}</span>
+            Source utilisée :
+            <span class="font-semibold">{{ effectiveSourceLabel }}</span>
           </p>
 
           <!-- Taille -->
@@ -385,83 +482,131 @@ onMounted(async () => {
       >
         <h2 class="text-2xl font-bold text-accent mb-2">👀 Aperçu</h2>
         <p class="text-xs text-accent mb-4">
-          Ceci est une approximation de ce qui sera affiché sur l'overlay.
+          Ceci simule ton stream (16:9). Tu peux déplacer/redimensionner les
+          blocs.
         </p>
 
         <div
-          class="bg-soft rounded p-4 flex-1 overflow-auto flex flex-col items-center justify-center"
+          ref="stageRef"
+          class="relative bg-soft rounded-lg flex-1 overflow-hidden mx-auto"
+          style="width: 100%; max-width: 960px; aspect-ratio: 16 / 9"
         >
-          <!-- Preview lien externe prioritaire -->
-          <template v-if="hasExternal">
-            <div class="flex items-center gap-3 mb-4">
-              <img
-                :src="avatar"
-                class="w-10 h-10 rounded-full border-2 border-accent"
-              />
-              <span class="text-accent font-semibold">
-                {{ username || 'Invité' }}
-              </span>
-            </div>
+          <!-- Hint quand aucun média -->
+          <p
+            v-if="!hasExternal && !previewUrl"
+            class="absolute text-xs text-accent/60 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+          >
+            Ajoute un fichier ou un lien pour prévisualiser le média.
+          </p>
 
-            <template v-if="embedPreviewUrl">
+          <!-- Bloc USER INFO -->
+          <div
+            class="absolute rounded-lg px-2 py-1 flex items-center gap-2 bg-panel/80 border border-accent/60 cursor-move select-none"
+            :style="{
+              left: layout.userInfo.x + '%',
+              top: layout.userInfo.y + '%',
+              width: layout.userInfo.width + '%',
+              height: layout.userInfo.height + '%',
+            }"
+            @pointerdown="(e) => startDrag(e, 'userInfo')"
+          >
+            <img
+              :src="avatar"
+              class="w-7 h-7 rounded-full border border-accent object-cover"
+            />
+            <span class="text-accent font-semibold text-xs truncate">
+              {{ username || "Invité" }}
+            </span>
+
+            <!-- handle resize -->
+            <div
+              class="absolute right-0 bottom-0 w-3 h-3 bg-accent rounded-br-lg cursor-se-resize"
+              @pointerdown="(e) => startResize(e, 'userInfo')"
+            />
+          </div>
+
+          <!-- Bloc MEDIA (fichier ou lien) -->
+          <div
+            class="absolute rounded-lg overflow-hidden bg-black cursor-move"
+            :style="{
+              left: layout.media.x + '%',
+              top: layout.media.y + '%',
+              width: layout.media.width + '%',
+              height: layout.media.height + '%',
+            }"
+            @pointerdown="(e) => startDrag(e, 'media')"
+          >
+            <!-- Lien externe prioritaire -->
+            <template v-if="hasExternal && embedPreviewUrl">
               <iframe
-                v-if="embedType === 'youtube' || embedType === 'tiktok' || embedType === 'twitch'"
+                v-if="embedType === 'youtube' || embedType === 'twitch'"
                 :src="embedPreviewUrl"
-                class="rounded max-h-full max-w-full mb-2"
+                class="w-full h-full"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                 allowfullscreen
               />
-              <p v-else class="text-xs text-accent text-center">
-                Impossible de prévisualiser ce lien, mais il sera envoyé tel quel à l'overlay.
-              </p>
+              <iframe
+                v-else-if="embedType === 'tiktok'"
+                :src="embedPreviewUrl"
+                class="w-full h-full"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowfullscreen
+              />
+              <div
+                v-else
+                class="w-full h-full flex items-center justify-center text-xs text-accent"
+              >
+                Lien non prévisualisable
+              </div>
             </template>
 
-            <p v-if="caption" class="text-accent text-center italic mt-2">
-              {{ caption }}
-            </p>
-          </template>
-
-          <!-- Preview fichier local -->
-          <template v-else-if="previewUrl">
-            <div class="flex items-center gap-3 mb-4">
-              <img
-                :src="avatar"
-                class="w-10 h-10 rounded-full border-2 border-accent"
+            <!-- Sinon fichier local -->
+            <template v-else-if="previewUrl">
+              <video
+                v-if="file?.type.startsWith('video')"
+                :src="previewUrl"
+                controls
+                class="w-full h-full object-cover"
               />
-              <span class="text-accent font-semibold">
-                {{ username || 'Invité' }}
-              </span>
-            </div>
+              <audio
+                v-else-if="file?.type.startsWith('audio')"
+                :src="previewUrl"
+                controls
+                class="w-full"
+              />
+              <img
+                v-else
+                :src="previewUrl"
+                class="w-full h-full object-cover"
+              />
+            </template>
 
-            <video
-              v-if="file?.type.startsWith('video')"
-              :src="previewUrl"
-              controls
-              class="rounded max-h-full max-w-full object-contain mb-2"
+            <div
+              class="absolute right-0 bottom-0 w-3 h-3 bg-accent rounded-br-lg cursor-se-resize"
+              @pointerdown="(e) => startResize(e, 'media')"
             />
-            <audio
-              v-else-if="file?.type.startsWith('audio')"
-              :src="previewUrl"
-              controls
-              class="w-full max-w-md mb-2"
-            />
-            <img
-              v-else
-              :src="previewUrl"
-              class="rounded max-h-full max-w-full object-contain mb-2"
-            />
+          </div>
 
-            <p v-if="caption" class="text-accent text-center italic mt-2">
-              {{ caption }}
-            </p>
-          </template>
+          <!-- Bloc MESSAGE -->
+          <div
+            class="absolute rounded-lg px-2 py-1 bg-panel/80 border border-accent/60 text-xs cursor-move select-none flex items-center"
+            :style="{
+              left: layout.message.x + '%',
+              top: layout.message.y + '%',
+              width: layout.message.width + '%',
+              height: layout.message.height + '%',
+            }"
+            @pointerdown="(e) => startDrag(e, 'message')"
+          >
+            <span class="truncate w-full">
+              {{ caption || "Légende (optionnelle)" }}
+            </span>
 
-          <!-- Aucun média -->
-          <template v-else>
-            <p class="italic text-sm text-accent">
-              Aucun média sélectionné pour le moment.
-            </p>
-          </template>
+            <div
+              class="absolute right-0 bottom-0 w-3 h-3 bg-accent rounded-br-lg cursor-se-resize"
+              @pointerdown="(e) => startResize(e, 'message')"
+            />
+          </div>
         </div>
       </div>
     </div>
