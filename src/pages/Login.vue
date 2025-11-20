@@ -9,15 +9,12 @@ const discordLoginUrl = `${API_BASE_URL}/api/auth/login`;
 </script>
 
 <template>
-  <div class="relative h-screen w-full overflow-hidden text-main">
-    <!-- 🔹 Background shader 3D  <WaterGradientBackground /> -->
-<WaterGradientBackground />
-    <!-- DEBUG : fond rouge -->
-    <div class="absolute inset-0 -z-20 bg-red-500/50"></div>
-    <!-- 🔹 Overlay pour la lisibilité -->
-    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm -z-10"></div>
+   <div class="relative h-screen w-full overflow-hidden text-main">
+    <WaterGradientBackground />
 
-    <!-- 🔹 Contenu -->
+  <div class="absolute inset-0 bg-black/60 backdrop-blur-sm -z-10"></div>
+
+
     <div class="relative z-10 h-full w-full flex items-center justify-center">
       <div class="flex flex-col md:flex-row gap-12 p-8 w-full max-w-6xl">
         <!-- Logo & Description -->
