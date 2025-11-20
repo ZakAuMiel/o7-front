@@ -9,14 +9,48 @@ const discordLoginUrl = `${API_BASE_URL}/api/auth/login`;
 
 <template>
   <div class="relative h-screen w-full overflow-hidden">
-
     <!-- 🎨 Background ShaderGradient avec fade-in -->
     <div class="absolute inset-0 -z-20 bg-fade-in">
-      <iframe
-        src="https://www.shadergradient.co/customize?animate=on&axesHelper=off&bgColor1=%23000000&bgColor2=%23000000&brightness=1&cAzimuthAngle=180&cDistance=2.8&cPolarAngle=80&cameraZoom=9.1&color1=%23606080&color2=%238d7dca&color3=%23212121&destination=onCanvas&embedMode=on&envPreset=city&format=gif&fov=45&frameRate=10&gizmoHelper=hide&grain=on&lightType=3d&pixelDensity=1.9&positionX=0&positionY=0&positionZ=0&range=enabled&rangeEnd=40&rangeStart=0&reflection=0.1&rotationX=50&rotationY=0&rotationZ=-60&shader=defaults&type=waterPlane&uAmplitude=0&uDensity=1.5&uFrequency=0&uSpeed=0.2&uStrength=1.5&uTime=8&wireframe=false"
-        class="absolute inset-0 w-full h-full border-0"
-        allowfullscreen
-      ></iframe>
+      <shader-gradient
+        class="absolute inset-0 -z-20 w-full h-full"
+        style="width: 100%; height: 100%"
+        animate="on"
+        axesHelper="off"
+        bgColor1="#000000"
+        bgColor2="#000000"
+        brightness="1"
+        cAzimuthAngle="180"
+        cDistance="2.8"
+        cPolarAngle="80"
+        cameraZoom="9.1"
+        color1="#606080"
+        color2="#8d7dca"
+        color3="#212121"
+        destination="onCanvas"
+        envPreset="city"
+        fov="45"
+        gizmoHelper="hide"
+        grain="on"
+        lightType="3d"
+        pixelDensity="1.9"
+        positionX="0"
+        positionY="0"
+        positionZ="0"
+        range="enabled"
+        rangeEnd="40"
+        rangeStart="0"
+        reflection="0.1"
+        rotationX="50"
+        rotationY="0"
+        rotationZ="-60"
+        shader="defaults"
+        type="waterPlane"
+        uAmplitude="0"
+        uDensity="1.5"
+        uFrequency="0"
+        uSpeed="0.2"
+        uStrength="1.5"
+      />
 
       <!-- Overlay foncé pour la lisibilité -->
       <div class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
@@ -27,14 +61,11 @@ const discordLoginUrl = `${API_BASE_URL}/api/auth/login`;
       class="relative z-10 h-full w-full flex items-center justify-center text-main px-4 md:px-8"
     >
       <div class="flex flex-col md:flex-row gap-12 w-full max-w-6xl">
-
         <!-- Logo & Description -->
         <div
           class="flex-1 flex flex-col justify-center items-start text-left animate-fade-in"
         >
-          <h1
-            class="text-6xl md:text-7xl font-black tracking-wide logo-glow"
-          >
+          <h1 class="text-6xl md:text-7xl font-black tracking-wide logo-glow">
             07
           </h1>
           <p class="mt-4 text-lg text-accent max-w-md">
@@ -62,10 +93,8 @@ const discordLoginUrl = `${API_BASE_URL}/api/auth/login`;
             </a>
           </div>
         </div>
-
       </div>
     </div>
-
   </div>
 </template>
 
@@ -104,22 +133,16 @@ const discordLoginUrl = `${API_BASE_URL}/api/auth/login`;
 /* Glow rose/orangé autour du logo 07 */
 @keyframes glow-pulse {
   0% {
-    text-shadow:
-      0 0 16px rgba(255, 80, 5, 0.65),
-      0 0 32px rgba(255, 111, 97, 0.55),
-      0 0 48px rgba(192, 132, 252, 0.35);
+    text-shadow: 0 0 16px rgba(255, 80, 5, 0.65),
+      0 0 32px rgba(255, 111, 97, 0.55), 0 0 48px rgba(192, 132, 252, 0.35);
   }
   50% {
-    text-shadow:
-      0 0 22px rgba(255, 120, 40, 0.9),
-      0 0 42px rgba(255, 150, 130, 0.8),
-      0 0 64px rgba(216, 180, 254, 0.6);
+    text-shadow: 0 0 22px rgba(255, 120, 40, 0.9),
+      0 0 42px rgba(255, 150, 130, 0.8), 0 0 64px rgba(216, 180, 254, 0.6);
   }
   100% {
-    text-shadow:
-      0 0 16px rgba(255, 80, 5, 0.65),
-      0 0 32px rgba(255, 111, 97, 0.55),
-      0 0 48px rgba(192, 132, 252, 0.35);
+    text-shadow: 0 0 16px rgba(255, 80, 5, 0.65),
+      0 0 32px rgba(255, 111, 97, 0.55), 0 0 48px rgba(192, 132, 252, 0.35);
   }
 }
 .logo-glow {
@@ -142,8 +165,7 @@ const discordLoginUrl = `${API_BASE_URL}/api/auth/login`;
     ),
     rgba(10, 10, 20, 0.7);
   border: 1px solid rgba(255, 255, 255, 0.18);
-  box-shadow:
-    0 18px 45px rgba(0, 0, 0, 0.75),
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.75),
     0 0 40px rgba(248, 113, 113, 0.18);
   backdrop-filter: blur(22px);
 }
