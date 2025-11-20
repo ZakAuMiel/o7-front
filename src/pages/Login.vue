@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import WaterGradientBackground from "@/components/WaterGradientBackground.vue";
+import WaterGradientBackground from "../components/WaterGradientBackground.vue";
 
 // Page de connexion avec Discord
 const API_BASE_URL =
