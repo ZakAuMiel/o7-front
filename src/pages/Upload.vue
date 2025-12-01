@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount, computed } from "vue";
-import WaterGradientBackground from "@/components/WaterGradientBackground.vue";
+
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
@@ -314,7 +314,6 @@ onMounted(async () => {
 </script>
 
 <template>
-   <WaterGradientBackground />
   <div class="min-h-screen w-full p-6 bg-soft text-main flex justify-center">
     <div class="w-full max-w-[90rem] flex flex-col gap-6">
 
