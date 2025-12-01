@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount, computed } from "vue";
+import WaterGradientBackground from "@/components/WaterGradientBackground.vue";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
@@ -66,8 +67,7 @@ const embedType = computed<"youtube" | "tiktok" | "twitch" | "other" | null>(
   () => {
     const url = externalUrl.value.trim().toLowerCase();
     if (!url) return null;
-    if (url.includes("youtube.com") || url.includes("youtu.be"))
-      return "youtube";
+    if (url.includes("youtube.com") || url.includes("youtu.be")) return "youtube";
     if (url.includes("tiktok.com")) return "tiktok";
     if (url.includes("twitch.tv")) return "twitch";
     return "other";
@@ -314,13 +314,13 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div
-    class="min-h-screen w-full p-6 bg-soft text-main flex justify-center items-center"
-  >
-    <div class="flex flex-col lg:flex-row gap-6 w-full max-w-[90rem] h-[90vh]">
-      <!-- Form -->
+   <WaterGradientBackground />
+  <div class="min-h-screen w-full p-6 bg-soft text-main flex justify-center">
+    <div class="w-full max-w-[90rem] flex flex-col gap-6">
+
+      <!-- FORMULAIRE EN HAUT -->
       <div
-        class="bg-panel p-6 rounded-xl border border-accent shadow-md flex-1 flex flex-col justify-between"
+        class="bg-panel p-6 rounded-xl border border-accent shadow-md flex flex-col"
       >
         <form class="space-y-4" @submit.prevent="handleSubmit">
           <h2 class="text-2xl font-bold text-accent mb-4">🎬 Envoi de mème</h2>
@@ -447,7 +447,8 @@ onMounted(async () => {
               </div>
             </div>
             <p class="text-xs mt-1 text-accent">
-              Durée actuelle : <strong>{{ duration }} secondes</strong>
+              Durée actuelle :
+              <strong>{{ duration }} secondes</strong>
             </p>
           </div>
 
@@ -481,20 +482,20 @@ onMounted(async () => {
         </button>
       </div>
 
-      <!-- Aperçu -->
+      <!-- APERÇU 16:9 EN BAS -->
       <div
-        class="bg-panel p-6 rounded-xl border border-accent shadow-md flex-1 flex flex-col"
+        class="bg-panel p-6 rounded-xl border border-accent shadow-md flex flex-col"
       >
         <h2 class="text-2xl font-bold text-accent mb-2">👀 Aperçu</h2>
         <p class="text-xs text-accent mb-4">
-          Ceci simule ton stream (16:9). Tu peux déplacer/redimensionner les
-          blocs.
+          Ceci simule ton stream en 16:9 (équivalent 1280×720 / 1920×1080).
+          Les positions et tailles sont les mêmes que sur l'overlay.
         </p>
 
         <div
           ref="stageRef"
-          class="relative bg-soft rounded-lg flex-1 overflow-hidden mx-auto"
-          style="width: 100%; max-width: 960px; aspect-ratio: 16 / 9"
+          class="relative bg-soft rounded-lg overflow-hidden mx-auto"
+          style="width: 100%; max-width: 1280px; aspect-ratio: 16 / 9"
         >
           <!-- Hint quand aucun média -->
           <p
@@ -523,14 +524,13 @@ onMounted(async () => {
               {{ username || "Invité" }}
             </span>
 
-            <!-- handle resize -->
             <div
               class="absolute right-0 bottom-0 w-3 h-3 bg-accent rounded-br-lg cursor-se-resize"
               @pointerdown="(e) => startResize(e, 'userInfo')"
             />
           </div>
 
-          <!-- Bloc MEDIA (fichier ou lien) -->
+          <!-- Bloc MEDIA -->
           <div
             class="absolute rounded-lg overflow-hidden bg-black cursor-move"
             :style="{
@@ -614,6 +614,7 @@ onMounted(async () => {
           </div>
         </div>
       </div>
+
     </div>
   </div>
 </template>
