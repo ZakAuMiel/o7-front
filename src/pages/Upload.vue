@@ -317,7 +317,7 @@ onMounted(async () => {
 <template>
   <div class="relative min-h-screen w-full p-6 text-main flex justify-center">
     <WaterGradientBackground class="fixed inset-0 -z-10" />
-    <div class="relative z-10 w-full max-w-[90rem] flex flex-col gap-6">
+    <div class="relative z-10 w-full max-w-360 flex flex-col gap-6">
 
       <!-- FORMULAIRE EN HAUT -->
       <div

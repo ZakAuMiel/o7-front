@@ -1,11 +1,59 @@
 <script setup lang="ts">
+
+import { ref } from "vue";
+import confetti from "canvas-confetti";
 import WaterGradientBackground from "../components/WaterGradientBackground.vue";
+import { Font } from "three/examples/jsm/Addons.js";
+
 
 // Page de connexion avec Discord
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
 // URL pour la connexion Discord
 const discordLoginUrl = `${API_BASE_URL}/api/auth/login`;
+
+const loginBtn = ref<HTMLElement | null>(null);
+
+let lastBurst = 0;
+const COOLDOWN_MS = 3000;
+
+function fireEmojiConfetti() {
+  const now = Date.now();
+  if (now - lastBurst < COOLDOWN_MS) return;
+  lastBurst = now;
+
+  const rect = loginBtn.value?.getBoundingClientRect();
+  const x = rect ? (rect.left + rect.width / 2) / window.innerWidth : 0.5;
+  const y = rect ? (rect.top + rect.height / 2) / window.innerHeight : 0.6;
+
+  // ✅ Crée une "shape" à partir de l’emoji
+  const salute = confetti.shapeFromText({ text: "🫡", scalar: 100 });
+
+ confetti({
+  particleCount: 100,
+  spread: 200,
+  startVelocity: 20,
+  ticks: 70,
+  gravity: 0.5,
+  origin: { x, y },
+  shapes: [salute],
+  font: "120px sans-serif",
+  flat: true, // ✅ rendu plus 2D
+});
+}
+
+
+// Optionnel : mini pluie continue tant que hover (léger)
+let hoverInterval: number | null = null;
+function onHoverStart() {
+  fireEmojiConfetti();
+  hoverInterval = window.setInterval(() => fireEmojiConfetti(), 700);
+}
+function onHoverEnd() {
+  if (hoverInterval) window.clearInterval(hoverInterval);
+  hoverInterval = null;
+}
+
 </script>
 
 <template>
@@ -22,10 +70,10 @@ const discordLoginUrl = `${API_BASE_URL}/api/auth/login`;
           class="flex-1 flex flex-col justify-center items-start text-left animate-fade-in"
         >
           <h1 class="text-6xl font-black tracking-wide text-primary logo-glow">
-            07
+            🫡
           </h1>
           <p class="mt-4 text-lg text-accent max-w-md">
-            Bienvenue sur <strong>07</strong> – la plateforme où tes potes
+            Bienvenue sur <strong>o7</strong> – la plateforme où tes potes
             peuvent t'envoyer leurs mèmes en live. Authentifie-toi avec Discord
             et balance des clips, images ou gifs en temps réel sur le stream !
           </p>
@@ -42,6 +90,9 @@ const discordLoginUrl = `${API_BASE_URL}/api/auth/login`;
               envoyer des contenus.
             </p>
             <a
+              ref="loginBtn"
+              @mouseenter="onHoverStart"
+              @mouseleave="onHoverEnd"
               :href="discordLoginUrl"
               class="block w-full text-center bg-primary text-white font-semibold py-3 rounded-lg hover:opacity-90 transition"
             >
