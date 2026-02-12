@@ -3,6 +3,7 @@
   /// <reference types="vite/client" />
   import { onMounted, ref } from 'vue';
   import { useRouter } from 'vue-router';
+  import WaterGradientBackground from '../components/WaterGradientBackground.vue';
   
   interface AllowedUser {
     userId: string;
@@ -39,10 +40,12 @@
 </script>
 
 <template>
-    <div class="min-h-screen bg-soft text-main p-6">
-      <h1 class="text-3xl font-bold text-accent mb-6">👥 Membres autorisés</h1>
-  
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+    <div class="relative min-h-screen text-main p-6">
+      <WaterGradientBackground class="fixed inset-0 -z-10" />
+      <div class="relative z-10">
+        <h1 class="text-3xl font-bold text-accent mb-6">👥 Membres autorisés</h1>
+    
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
         <!-- Streamers -->
         <div>
           <h2 class="text-2xl font-semibold text-accent mb-4">🎥 Streamers</h2>
@@ -100,6 +103,7 @@
             </div>
           </div>
         </div>
+      </div>
       </div>
     </div>
   </template>

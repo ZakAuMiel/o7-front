@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
+import WaterGradientBackground from "../components/WaterGradientBackground.vue";
 
 interface Guild {
   id: string;
@@ -92,7 +93,9 @@ onMounted(async () => {
     ⏳ Vérification de session...
   </div>
 
-  <div class="min-h-screen bg-soft text-main p-6 flex flex-col items-center">
+  <div class="relative min-h-screen text-main p-6 flex flex-col items-center">
+    <WaterGradientBackground class="fixed inset-0 -z-10" />
+    <div class="relative z-10 w-full flex flex-col items-center">
     <h1 class="text-3xl font-bold text-accent mb-4">🧭 Choisis un serveur</h1>
 
     <div v-if="loading" class="text-accent">Chargement des serveurs...</div>
@@ -128,6 +131,7 @@ onMounted(async () => {
           <div class="font-semibold truncate">{{ guild.name }}</div>
         </div>
       </div>
+    </div>
     </div>
   </div>
 </template>
