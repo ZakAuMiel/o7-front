@@ -3,7 +3,7 @@
 import { ref } from "vue";
 import confetti from "canvas-confetti";
 import WaterGradientBackground from "../components/WaterGradientBackground.vue";
-import { Font } from "three/examples/jsm/Addons.js";
+
 
 
 // Page de connexion avec Discord
@@ -37,7 +37,6 @@ function fireEmojiConfetti() {
   gravity: 0.5,
   origin: { x, y },
   shapes: [salute],
-  font: "120px sans-serif",
   flat: true, // ✅ rendu plus 2D
 });
 }
